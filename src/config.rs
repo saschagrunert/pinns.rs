@@ -7,7 +7,7 @@ use std::{fs::metadata, path::PathBuf};
 
 #[derive(Clap, Getters, CopyGetters)]
 #[clap(
-    after_help("More info at: https://github.com/saschagrunert/pinns"),
+    after_help("More info at: https://github.com/saschagrunert/pinns.rs"),
     global_setting(AppSettings::ColoredHelp),
     version(env!("VERSION"))
 )]
