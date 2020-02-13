@@ -27,18 +27,13 @@ pub struct Pinns {
 
 impl Default for Pinns {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Pinns {
-    /// Create a new pinns instance
-    pub fn new() -> Self {
         Pinns {
             config: Config::parse(),
         }
     }
+}
 
+impl Pinns {
     /// Run pinns with the provided CLI configuration
     pub fn run(&self) -> Result<()> {
         // Setup logging
