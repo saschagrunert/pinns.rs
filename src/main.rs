@@ -3,7 +3,7 @@ use pinns::Pinns;
 use std::process::exit;
 
 fn main() {
-    if let Err(e) = Pinns::new().run() {
+    if let Err(e) = Pinns::default().run() {
         error!(
             "{}",
             &e.chain()

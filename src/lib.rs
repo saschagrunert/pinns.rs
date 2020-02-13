@@ -25,6 +25,12 @@ pub struct Pinns {
     config: Config,
 }
 
+impl Default for Pinns {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Pinns {
     /// Create a new pinns instance
     pub fn new() -> Self {

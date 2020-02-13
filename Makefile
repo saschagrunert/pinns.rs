@@ -10,8 +10,9 @@ build:
 build-release:
 	$(CARGO) build --release
 
-all:
-	$(CARGO) build
+.PHONY: clean
+clean:
+	$(CARGO) clean
 
 .PHONY: lint-clippy
 lint-clippy:
