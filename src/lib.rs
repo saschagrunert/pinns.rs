@@ -103,14 +103,8 @@ impl Pinns {
 
         let ns_path = PathBuf::from("/proc/self/ns").join(name);
         debug!("mounting {}", ns_path.display());
-        mount::<_, _, PathBuf, PathBuf>(
-            Some(&ns_path),
-            &bind_path,
-            None,
-            MsFlags::MS_BIND,
-            None,
-        )
-        .context(format!(
+        mount::<_, _, PathBuf, PathBuf>(Some(&ns_path), &bind_path, None, MsFlags::MS_BIND, None)
+            .context(format!(
             "unable to bind mount namespace {}",
             ns_path.display()
         ))?;
