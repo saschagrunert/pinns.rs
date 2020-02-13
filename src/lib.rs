@@ -36,13 +36,16 @@ impl Default for Pinns {
 impl Pinns {
     /// Run pinns with the provided CLI configuration
     pub fn run(&self) -> Result<()> {
-        // Setup logging
-        set_var("RUST_LOG", format!("pinns={}", self.config.log_level()));
-        try_init().context("unable to init logger")?;
-
+        self.init_logging()?;
         self.config.validate()?;
         self.unshare()?;
         self.bind_namespaces()
+    }
+
+    // Setup logging via env logger
+    fn init_logging(&self) -> Result<()> {
+        set_var("RUST_LOG", format!("pinns={}", self.config.log_level()));
+        try_init().context("unable to init logger")
     }
 
     /// Unshare the configured namespaces
