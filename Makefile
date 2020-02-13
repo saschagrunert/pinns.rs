@@ -8,6 +8,7 @@ build:
 
 .PHONY: build-release
 build-release:
+	RUSTFLAGS='-C link-arg=-s' \
 	$(CARGO) build --release
 
 .PHONY: clean
