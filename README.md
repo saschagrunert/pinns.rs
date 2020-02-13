@@ -19,7 +19,8 @@ FLAGS:
 
 OPTIONS:
     -d, --dir <DIRECTORY>      The directory for the pinned namespaces
-    -l, --log-level <LEVEL>    The logging level of the application [default: info]  [possible values: trace, debug, info, warn, error, off]
+    -l, --log-level <LEVEL>    The logging level of the application [default: info]
+                               [possible values: trace, debug, info, warn, error, off]
 
 More info at: https://github.com/saschagrunert/pinns.rs
 ```
