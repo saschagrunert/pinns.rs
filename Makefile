@@ -20,7 +20,7 @@ build-static:
 		bash -c \
 			"sudo mkdir target && \
 			 sudo chown $$(id -u):$$(id -g) target && \
-			 cargo build --release"
+			 RUSTFLAGS='-C link-arg=-s' cargo build --release"
 	sudo chown -R $(shell id -u):$(shell id -g) target
 
 .PHONY: clean
