@@ -19,8 +19,8 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -d, --dir <DIRECTORY>      The directory for the pinned namespaces [default:
-                               /tmp]
+    -d, --dir <DIRECTORY>      The directory for the pinned namespaces
+                               [default: /tmp]
     -l, --log-level <LEVEL>    The logging level of the application [default: info]
                                [possible values: trace, debug, info, warn, error,
                                off]
