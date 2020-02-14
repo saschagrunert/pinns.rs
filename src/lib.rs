@@ -8,7 +8,6 @@ mod config;
 use config::Config;
 
 use anyhow::{Context, Result};
-use clap::Clap;
 use env_logger::try_init;
 use log::debug;
 use nix::{
@@ -21,16 +20,9 @@ use nix::{
 use std::{env::set_var, path::PathBuf};
 
 /// The main entry point for pinns
+#[derive(Default)]
 pub struct Pinns {
     config: Config,
-}
-
-impl Default for Pinns {
-    fn default() -> Self {
-        Pinns {
-            config: Config::parse(),
-        }
-    }
 }
 
 impl Pinns {
@@ -52,9 +44,9 @@ impl Pinns {
     fn unshare(&self) -> Result<()> {
         let mut flags = CloneFlags::empty();
 
-        if self.config.uts() {
-            flags |= CloneFlags::CLONE_NEWUTS;
-            debug!("unsharing UTS namespace")
+        if self.config.cgroup() {
+            flags |= CloneFlags::CLONE_NEWCGROUP;
+            debug!("unsharing CGROUP namespace")
         }
         if self.config.ipc() {
             flags |= CloneFlags::CLONE_NEWIPC;
@@ -64,9 +56,17 @@ impl Pinns {
             flags |= CloneFlags::CLONE_NEWNET;
             debug!("unsharing NET namespace")
         }
+        if self.config.pid() {
+            flags |= CloneFlags::CLONE_NEWPID;
+            debug!("unsharing PID namespace")
+        }
         if self.config.user() {
             flags |= CloneFlags::CLONE_NEWUSER;
             debug!("unsharing USER namespace")
+        }
+        if self.config.uts() {
+            flags |= CloneFlags::CLONE_NEWUTS;
+            debug!("unsharing UTS namespace")
         }
 
         unshare(flags).context("failed to unshare namespaces")
@@ -74,8 +74,8 @@ impl Pinns {
 
     /// Binds the namespaces if provided by the configuration
     fn bind_namespaces(&self) -> Result<()> {
-        if self.config.uts() {
-            self.bind_namespace("uts")?;
+        if self.config.cgroup() {
+            self.bind_namespace("cgroup")?;
         }
         if self.config.ipc() {
             self.bind_namespace("ipc")?;
@@ -83,8 +83,14 @@ impl Pinns {
         if self.config.net() {
             self.bind_namespace("net")?;
         }
+        if self.config.pid() {
+            self.bind_namespace("pid")?;
+        }
         if self.config.user() {
             self.bind_namespace("user")?;
+        }
+        if self.config.uts() {
+            self.bind_namespace("uts")?;
         }
         Ok(())
     }
