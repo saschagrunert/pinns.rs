@@ -13,9 +13,15 @@ build-release:
 
 .PHONY: build-static
 build-static:
-	podman run --rm -it -v $(shell pwd):/home/rust/src \
-		ekidd/rust-musl-builder:1.39.0 \
-		cargo build --release
+	sudo rm -rf target
+	podman run --rm -it \
+		-v $(shell pwd):/home/rust/src \
+		ekidd/rust-musl-builder:latest \
+		bash -c \
+			"sudo mkdir target && \
+			 sudo chown $$(id -u):$$(id -g) target && \
+			 cargo build --release"
+	sudo chown -R $(shell id -u):$(shell id -g) target
 
 .PHONY: clean
 clean:
