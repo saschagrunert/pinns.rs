@@ -15,7 +15,6 @@ FLAGS:
     -i, --ipc        Pin the IPC namespace
     -n, --net        Pin the network namespace
     -p, --pid        Pin the PID namespace
-    -U, --user       Pin the user namespace
     -u, --uts        Pin the UTS namespace
     -V, --version    Prints version information
 

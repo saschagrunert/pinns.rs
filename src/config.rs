@@ -55,11 +55,6 @@ pub struct Config {
     pid: bool,
 
     #[get_copy = "pub"]
-    #[clap(long("user"), short("U"))]
-    /// Pin the user namespace
-    user: bool,
-
-    #[get_copy = "pub"]
     #[clap(long("uts"), short("u"))]
     /// Pin the UTS namespace
     uts: bool,
@@ -68,13 +63,7 @@ pub struct Config {
 impl Config {
     /// Validate the configuration in their parameters
     pub fn validate(&self) -> Result<()> {
-        if !self.cgroup()
-            && !self.ipc()
-            && !self.net()
-            && !self.pid()
-            && !self.user()
-            && !self.uts()
-        {
+        if !self.cgroup() && !self.ipc() && !self.net() && !self.pid() && !self.uts() {
             bail!("no namespace specified for pinning")
         }
 

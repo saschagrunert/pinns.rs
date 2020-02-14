@@ -60,10 +60,6 @@ impl Pinns {
             flags |= CloneFlags::CLONE_NEWPID;
             debug!("unsharing PID namespace")
         }
-        if self.config.user() {
-            flags |= CloneFlags::CLONE_NEWUSER;
-            debug!("unsharing USER namespace")
-        }
         if self.config.uts() {
             flags |= CloneFlags::CLONE_NEWUTS;
             debug!("unsharing UTS namespace")
@@ -85,9 +81,6 @@ impl Pinns {
         }
         if self.config.pid() {
             self.bind_namespace("pid")?;
-        }
-        if self.config.user() {
-            self.bind_namespace("user")?;
         }
         if self.config.uts() {
             self.bind_namespace("uts")?;
