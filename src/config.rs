@@ -115,11 +115,7 @@ impl IntoIterator for &Namespaces {
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        vec![self.cgroup, self.ipc, self.net, self.pid, self.uts]
-            .into_iter()
-            .filter(|x| x.enabled())
-            .collect::<Vec<_>>()
-            .into_iter()
+        vec![self.cgroup, self.ipc, self.net, self.pid, self.uts].into_iter()
     }
 }
 

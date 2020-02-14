@@ -5,7 +5,7 @@
 
 mod config;
 
-use config::Config;
+use config::{Config, Namespace};
 
 use anyhow::{Context, Result};
 use env_logger::try_init;
@@ -42,29 +42,31 @@ impl Pinns {
 
     /// Unshare the configured namespaces
     fn unshare(&self) -> Result<()> {
-        let mut flags = CloneFlags::empty();
-
-        // Iteration returns only enabled namespaces
-        for ns in self.config.namespaces() {
-            flags |= ns.clone_flag();
-            debug!("unsharing {} namespace", ns.name());
-        }
+        let flags = self
+            .config
+            .namespaces()
+            .into_iter()
+            .filter(|x| x.enabled())
+            .fold(CloneFlags::empty(), |mut flags, ns| {
+                flags |= ns.clone_flag();
+                debug!("unsharing {} namespace", ns.name());
+                flags
+            });
 
         unshare(flags).context("failed to unshare namespaces")
     }
 
     /// Binds the namespaces if provided by the configuration
     fn bind_namespaces(&self) -> Result<()> {
-        // Iteration returns only enabled namespaces
-        for ns in self.config.namespaces() {
-            self.bind_namespace(ns.name())?;
+        for ns in self.config.namespaces().into_iter().filter(|x| x.enabled()) {
+            self.bind_namespace(ns)?;
         }
         Ok(())
     }
 
     /// Bind a single namespace
-    fn bind_namespace(&self, name: &str) -> Result<()> {
-        let bind_path = self.config.dir().join(name);
+    fn bind_namespace(&self, namespace: Namespace) -> Result<()> {
+        let bind_path = self.config.dir().join(namespace.name());
         debug!("binding namespace: {}", bind_path.display());
 
         let fd = open(
@@ -78,7 +80,7 @@ impl Pinns {
         ))?;
         close(fd).context("unable to close file descriptor")?;
 
-        let ns_path = PathBuf::from("/proc/self/ns").join(name);
+        let ns_path = PathBuf::from("/proc/self/ns").join(namespace.name());
         debug!("mounting {}", ns_path.display());
         mount::<_, _, PathBuf, PathBuf>(Some(&ns_path), &bind_path, None, MsFlags::MS_BIND, None)
             .context(format!(
