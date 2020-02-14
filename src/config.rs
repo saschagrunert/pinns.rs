@@ -4,6 +4,7 @@ use clap::{AppSettings, Clap};
 use getset::{CopyGetters, Getters};
 use lazy_static::lazy_static;
 use log::{debug, LevelFilter};
+use nix::sched::CloneFlags;
 use std::{env::temp_dir, fs::metadata, path::PathBuf};
 
 lazy_static! {
@@ -34,36 +35,116 @@ pub struct Config {
     /// The directory for the pinned namespaces
     dir: PathBuf,
 
-    #[get_copy = "pub"]
     #[clap(long("cgroup"), short("c"))]
     /// Pin the cgroup namespace
     cgroup: bool,
 
-    #[get_copy = "pub"]
     #[clap(long("ipc"), short("i"))]
     /// Pin the IPC namespace
     ipc: bool,
 
-    #[get_copy = "pub"]
     #[clap(long("net"), short("n"))]
     /// Pin the network namespace
     net: bool,
 
-    #[get_copy = "pub"]
     #[clap(long("pid"), short("p"))]
     /// Pin the PID namespace
     pid: bool,
 
-    #[get_copy = "pub"]
     #[clap(long("uts"), short("u"))]
     /// Pin the UTS namespace
     uts: bool,
+
+    #[get = "pub"]
+    #[clap(skip)]
+    namespaces: Namespaces,
+}
+
+#[derive(Getters)]
+pub struct Namespaces {
+    #[get = "pub"]
+    cgroup: Namespace,
+
+    #[get = "pub"]
+    ipc: Namespace,
+
+    #[get = "pub"]
+    net: Namespace,
+
+    #[get = "pub"]
+    pid: Namespace,
+
+    #[get = "pub"]
+    uts: Namespace,
+}
+
+impl Default for Namespaces {
+    fn default() -> Self {
+        Namespaces {
+            cgroup: Namespace {
+                name: "cgroup",
+                clone_flag: CloneFlags::CLONE_NEWCGROUP,
+                enabled: false,
+            },
+            ipc: Namespace {
+                name: "ipc",
+                clone_flag: CloneFlags::CLONE_NEWIPC,
+                enabled: false,
+            },
+            net: Namespace {
+                name: "net",
+                clone_flag: CloneFlags::CLONE_NEWNET,
+                enabled: false,
+            },
+            pid: Namespace {
+                name: "pid",
+                clone_flag: CloneFlags::CLONE_NEWPID,
+                enabled: false,
+            },
+            uts: Namespace {
+                name: "uts",
+                clone_flag: CloneFlags::CLONE_NEWUTS,
+                enabled: false,
+            },
+        }
+    }
+}
+
+impl IntoIterator for &Namespaces {
+    type Item = Namespace;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        vec![self.cgroup, self.ipc, self.net, self.pid, self.uts]
+            .into_iter()
+            .filter(|x| x.enabled())
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
+#[derive(Clone, Copy, Getters, CopyGetters)]
+pub struct Namespace {
+    #[get = "pub"]
+    name: &'static str,
+
+    #[get_copy = "pub"]
+    enabled: bool,
+
+    #[get_copy = "pub"]
+    clone_flag: CloneFlags,
 }
 
 impl Config {
     /// Validate the configuration in their parameters
-    pub fn validate(&self) -> Result<()> {
-        if !self.cgroup() && !self.ipc() && !self.net() && !self.pid() && !self.uts() {
+    pub fn validate(&mut self) -> Result<()> {
+        self.namespaces.cgroup.enabled = self.cgroup;
+        self.namespaces.ipc.enabled = self.ipc;
+        self.namespaces.net.enabled = self.net;
+        self.namespaces.pid.enabled = self.pid;
+        self.namespaces.uts.enabled = self.uts;
+
+        if self.namespaces().into_iter().all(|x| !x.enabled()) {
             bail!("no namespace specified for pinning")
         }
 

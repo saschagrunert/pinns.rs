@@ -27,7 +27,7 @@ pub struct Pinns {
 
 impl Pinns {
     /// Run pinns with the provided CLI configuration
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
         self.init_logging()?;
         self.config.validate()?;
         self.unshare()?;
@@ -44,25 +44,10 @@ impl Pinns {
     fn unshare(&self) -> Result<()> {
         let mut flags = CloneFlags::empty();
 
-        if self.config.cgroup() {
-            flags |= CloneFlags::CLONE_NEWCGROUP;
-            debug!("unsharing CGROUP namespace")
-        }
-        if self.config.ipc() {
-            flags |= CloneFlags::CLONE_NEWIPC;
-            debug!("unsharing IPC namespace")
-        }
-        if self.config.net() {
-            flags |= CloneFlags::CLONE_NEWNET;
-            debug!("unsharing NET namespace")
-        }
-        if self.config.pid() {
-            flags |= CloneFlags::CLONE_NEWPID;
-            debug!("unsharing PID namespace")
-        }
-        if self.config.uts() {
-            flags |= CloneFlags::CLONE_NEWUTS;
-            debug!("unsharing UTS namespace")
+        // Iteration returns only enabled namespaces
+        for ns in self.config.namespaces() {
+            flags |= ns.clone_flag();
+            debug!("unsharing {} namespace", ns.name());
         }
 
         unshare(flags).context("failed to unshare namespaces")
@@ -70,20 +55,9 @@ impl Pinns {
 
     /// Binds the namespaces if provided by the configuration
     fn bind_namespaces(&self) -> Result<()> {
-        if self.config.cgroup() {
-            self.bind_namespace("cgroup")?;
-        }
-        if self.config.ipc() {
-            self.bind_namespace("ipc")?;
-        }
-        if self.config.net() {
-            self.bind_namespace("net")?;
-        }
-        if self.config.pid() {
-            self.bind_namespace("pid")?;
-        }
-        if self.config.uts() {
-            self.bind_namespace("uts")?;
+        // Iteration returns only enabled namespaces
+        for ns in self.config.namespaces() {
+            self.bind_namespace(ns.name())?;
         }
         Ok(())
     }
