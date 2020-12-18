@@ -152,21 +152,10 @@ impl Config {
             bail!("no namespace specified for pinning")
         }
 
-        if !self.dir().exists() {
-            bail!("pin path {} does not exist", self.dir().display())
-        }
-
-        if !metadata(self.dir())?.is_dir() {
-            bail!("pin path {} is not a directory", self.dir().display())
-        }
+        is_dir_or_create(self.dir())?;
 
         for ns in self.namespaces().into_iter().filter(|x| x.enabled()) {
-            let parent_dir = self.parent_dir_for_namespace(ns.name);
-            if !parent_dir.exists() {
-                create_dir(parent_dir)?;
-            } else if !metadata(parent_dir.clone())?.is_dir() {
-                bail!("pin path {} is not a directory", parent_dir.display());
-            }
+            is_dir_or_create(&self.parent_dir_for_namespace(ns.name))?;
         }
 
         debug!("CLI provided config is valid");
@@ -176,6 +165,17 @@ impl Config {
         return self.dir().join(format!("{}ns", name));
     }
 }
+
+fn is_dir_or_create(path: &PathBuf) -> Result<()> {
+    if !path.exists() {
+        create_dir(path.display().to_string())?
+    }
+    if !metadata(path.clone())?.is_dir() {
+        bail!("given path {} is not a directory", path.display())
+    }
+    Ok(())
+}
+
 
 impl Default for Config {
     fn default() -> Self {
@@ -221,7 +221,6 @@ pub mod tests {
     fn validate_failed_parent_dir_file() -> Result<()> {
         let mut c = Config::default();
         c.uts = true;
-        c.dir = NamedTempFile::new()?.path().into();
         let _ = File::create(c.parent_dir_for_namespace("uts").display().to_string());
         assert!(c.validate().is_err());
         Ok(())
