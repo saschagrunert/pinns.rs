@@ -177,7 +177,7 @@ pub mod tests {
 
     #[test]
     fn validate_failed_no_namespaces() {
-        let c = Config::default();
+        let mut c = Config::default();
         assert!(c.validate().is_err())
     }
 
