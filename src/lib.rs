@@ -66,7 +66,8 @@ impl Pinns {
 
     /// Bind a single namespace
     fn bind_namespace(&self, namespace: Namespace) -> Result<()> {
-        let bind_path = self.config.dir().join(namespace.name());
+        let bind_path = self.config.parent_dir_for_namespace(namespace.name())
+                            .join(self.config.filename());
         debug!("binding namespace: {}", bind_path.display());
 
         let fd = open(

@@ -5,10 +5,12 @@ use getset::{CopyGetters, Getters};
 use lazy_static::lazy_static;
 use log::{debug, LevelFilter};
 use nix::sched::CloneFlags;
-use std::{env::temp_dir, fs::metadata, path::PathBuf};
+use std::{env::temp_dir, fs::create_dir, fs::metadata, path::PathBuf};
+use uuid::Uuid;
 
 lazy_static! {
     static ref TEMP_DIR: String = temp_dir().display().to_string();
+    static ref TEMP_FILE: String = Uuid::new_v4().to_hyphenated().to_string();
 }
 
 #[derive(Clap, Getters, CopyGetters)]
@@ -32,8 +34,14 @@ pub struct Config {
 
     #[get = "pub"]
     #[clap(default_value(&TEMP_DIR), long("dir"), short("d"), value_name("DIRECTORY"))]
-    /// The directory for the pinned namespaces
+    /// The parent directory for the pinned namespaces
+    /// The final namespace will be pinned to `dir`/`namespace.name`ns/`filename`
     dir: PathBuf,
+
+    #[get = "pub"]
+    #[clap(default_value(&TEMP_FILE), long("filename"), short("f"), value_name("FILENAME"))]
+    /// The file name each namespace will be pinned to
+    filename: String,
 
     #[clap(long("cgroup"), short("c"))]
     /// Pin the cgroup namespace
@@ -152,8 +160,20 @@ impl Config {
             bail!("pin path {} is not a directory", self.dir().display())
         }
 
+        for ns in self.namespaces().into_iter().filter(|x| x.enabled()) {
+            let parent_dir = self.parent_dir_for_namespace(ns.name);
+            if !parent_dir.exists() {
+                create_dir(parent_dir)?;
+            } else if !metadata(parent_dir.clone())?.is_dir() {
+                bail!("pin path {} is not a directory", parent_dir.display());
+            }
+        }
+
         debug!("CLI provided config is valid");
         Ok(())
+    }
+    pub fn parent_dir_for_namespace(&self, name: &str) -> PathBuf {
+        return self.dir().join(format!("{}ns", name));
     }
 }
 
@@ -167,6 +187,7 @@ impl Default for Config {
 pub mod tests {
     use super::*;
     use tempfile::NamedTempFile;
+    use std::fs::File;
 
     #[test]
     fn validate_success() -> Result<()> {
@@ -192,6 +213,16 @@ pub mod tests {
     fn validate_failed_path_not_dir() -> Result<()> {
         let mut c = Config::default();
         c.dir = NamedTempFile::new()?.path().into();
+        assert!(c.validate().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn validate_failed_parent_dir_file() -> Result<()> {
+        let mut c = Config::default();
+        c.uts = true;
+        c.dir = NamedTempFile::new()?.path().into();
+        let _ = File::create(c.parent_dir_for_namespace("uts").display().to_string());
         assert!(c.validate().is_err());
         Ok(())
     }
